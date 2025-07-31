@@ -1,0 +1,52 @@
+<!-- learn/bst.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Learn Binary Search Tree</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .container { max-width: 800px; margin: auto; text-align: left; }
+    .code-block {
+      background: #eee; padding: 10px; border-radius: 8px; font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Learn: Binary Search Tree (BST)</h1>
+    <p>
+      A Binary Search Tree (BST) is a binary tree where each node has:
+      <ul>
+        <li>Left subtree with values <b>less than</b> the node’s value</li>
+        <li>Right subtree with values <b>greater than</b> the node’s value</li>
+      </ul>
+    </p>
+
+    <h2>BST Operations</h2>
+    <h3>Insertion</h3>
+    <div class="code-block">
+      if (value &lt; node.value): go left<br>
+      else: go right
+    </div>
+
+    <h3>Search</h3>
+    <p>Same logic as insertion — go left or right based on comparison.</p>
+
+    <h3>Deletion Cases</h3>
+    <ul>
+      <li>No child → just delete</li>
+      <li>One child → link parent to child</li>
+      <li>Two children → replace with inorder successor</li>
+    </ul>
+
+    <h2>Time Complexity</h2>
+    <ul>
+      <li><b>Average:</b> O(log n)</li>
+      <li><b>Worst-case (unbalanced):</b> O(n)</li>
+    </ul>
+
+    <a href="../bst.html">← Try it Now</a>
+  </div>
+</body>
+</html>
