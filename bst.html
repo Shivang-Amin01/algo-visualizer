@@ -1,4 +1,3 @@
-<!-- bst.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,11 +5,75 @@
   <title>Binary Search Tree Visualizer</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    body {
+      display: flex;
+      margin: 0;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+
+    /* Left panel */
+    #info-panel {
+      width: 250px;
+      background: #ffffff;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+
+    #info-panel h2 {
+      margin-top: 0;
+    }
+
+    #info-panel .stat {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    #info-panel button {
+      margin-top: 15px;
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    #info-panel button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Main area */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow: auto;
+    }
+
+    #toolbar {
+      margin-bottom: 20px;
+    }
+
+    #toolbar input, #toolbar button, #toolbar select {
+      margin: 5px;
+      padding: 8px;
+      font-size: 14px;
+    }
+
     #tree-container {
       position: relative;
       width: 100%;
       min-height: 600px;
-      margin-top: 40px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
     .node {
@@ -23,7 +86,7 @@
       text-align: center;
       line-height: 40px;
       font-weight: bold;
-      transition: all 0.3s ease;
+      transition: all 0.5s ease; /* Smooth transitions */
     }
 
     .node.inserted {
@@ -31,9 +94,12 @@
       transform: scale(1.2);
     }
 
-    .node.deleted {
-      background-color: #f44336;
-      opacity: 0.4;
+    .node.searched {
+      background-color: #00BCD4;
+    }
+
+    .node.selected {
+      background-color: #9C27B0;
     }
 
     svg {
@@ -49,17 +115,43 @@
     line {
       stroke: #555;
       stroke-width: 2;
+      transition: all 0.5s ease; /* Smooth line animations */
+    }
+
+    #back-home {
+      background: #f44336;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Binary Search Tree Visualizer</h1>
-  <input type="number" id="valueInput" placeholder="Enter value">
-  <button onclick="insert()">Insert</button>
-  <button onclick="remove()">Delete</button>
+  <!-- Left Panel -->
+  <div id="info-panel">
+    <h2>Tree Info</h2>
+    <div class="stat">Nodes: <span id="node-count">0</span></div>
+    <div class="stat">Height: <span id="tree-height">0</span></div>
+    <button id="back-home" onclick="window.location.href='index.html'">← Back to Home</button>
+  </div>
 
-  <div id="tree-container">
-    <svg id="svg-lines"></svg>
+  <!-- Main Visualization Area -->
+  <div id="main">
+    <h1>Binary Search Tree Visualizer</h1>
+    <div id="toolbar">
+      <input type="number" id="valueInput" placeholder="Enter value">
+      <button onclick="insert()">Insert</button>
+      <button onclick="remove()">Remove</button>
+      <button onclick="search()">Search</button>
+      <button onclick="resetTree()">Create New</button>
+      <select id="traverseSelect">
+        <option value="inorder">Inorder</option>
+        <option value="preorder">Preorder</option>
+        <option value="postorder">Postorder</option>
+      </select>
+      <button onclick="traverseTree()">Traverse</button>
+    </div>
+    <div id="tree-container">
+      <svg id="svg-lines"></svg>
+    </div>
   </div>
 
   <script>
@@ -76,10 +168,12 @@
     class BST {
       constructor() {
         this.root = null;
+        this.count = 0;
       }
 
       insert(value) {
         this.root = this._insertRec(this.root, value);
+        this.count++;
         updateTree();
         highlightNode(value, 'inserted');
       }
@@ -92,18 +186,22 @@
       }
 
       delete(value) {
+        const beforeCount = this.count;
         this.root = this._deleteRec(this.root, value);
-        updateTree();
+        if (this.count < beforeCount) updateTree();
       }
 
       _deleteRec(node, value) {
         if (!node) return null;
-        if (value < node.value) node.left = this._deleteRec(node.left, value);
-        else if (value > node.value) node.right = this._deleteRec(node.right, value);
-        else {
+
+        if (value < node.value) {
+          node.left = this._deleteRec(node.left, value);
+        } else if (value > node.value) {
+          node.right = this._deleteRec(node.right, value);
+        } else {
+          this.count--;
           if (!node.left) return node.right;
           if (!node.right) return node.left;
-
           const minLargerNode = this._minValue(node.right);
           node.value = minLargerNode.value;
           node.right = this._deleteRec(node.right, minLargerNode.value);
@@ -115,6 +213,45 @@
         while (node.left) node = node.left;
         return node;
       }
+
+      search(value) {
+        return this._searchRec(this.root, value);
+      }
+
+      _searchRec(node, value) {
+        if (!node) return false;
+        if (node.value === value) return true;
+        return value < node.value ? this._searchRec(node.left, value) : this._searchRec(node.right, value);
+      }
+
+      getHeight(node = this.root) {
+        if (!node) return 0;
+        return 1 + Math.max(this.getHeight(node.left), this.getHeight(node.right));
+      }
+
+      inorder(node = this.root, arr = []) {
+        if (!node) return arr;
+        this.inorder(node.left, arr);
+        arr.push(node.value);
+        this.inorder(node.right, arr);
+        return arr;
+      }
+
+      preorder(node = this.root, arr = []) {
+        if (!node) return arr;
+        arr.push(node.value);
+        this.preorder(node.left, arr);
+        this.preorder(node.right, arr);
+        return arr;
+      }
+
+      postorder(node = this.root, arr = []) {
+        if (!node) return arr;
+        this.postorder(node.left, arr);
+        this.postorder(node.right, arr);
+        arr.push(node.value);
+        return arr;
+      }
     }
 
     const bst = new BST();
@@ -122,14 +259,40 @@
     function insert() {
       const value = parseInt(document.getElementById('valueInput').value);
       if (!isNaN(value)) bst.insert(value);
+      updateStats();
     }
 
     function remove() {
       const value = parseInt(document.getElementById('valueInput').value);
       if (!isNaN(value)) {
         highlightNode(value, 'deleted');
-        setTimeout(() => bst.delete(value), 500);
+        setTimeout(() => { bst.delete(value); updateStats(); }, 500);
       }
+    }
+
+    function search() {
+      const value = parseInt(document.getElementById('valueInput').value);
+      if (!isNaN(value) && bst.search(value)) {
+        highlightNode(value, 'searched');
+      } else {
+        alert('Value not found in tree');
+      }
+    }
+
+    function resetTree() {
+      bst.root = null;
+      bst.count = 0;
+      updateTree();
+      updateStats();
+    }
+
+    function traverseTree() {
+      const type = document.getElementById('traverseSelect').value;
+      let order = [];
+      if (type === 'inorder') order = bst.inorder();
+      if (type === 'preorder') order = bst.preorder();
+      if (type === 'postorder') order = bst.postorder();
+      alert(`${type.toUpperCase()}: ` + order.join(', '));
     }
 
     function updateTree() {
@@ -139,33 +302,26 @@
       svg.innerHTML = '';
 
       const positions = [];
-      assignCoordinates(bst.root, 0, 0, 500, positions);
+      assignCoordinates(bst.root, 0, 0, container.offsetWidth, positions);
       renderNodes(bst.root, container, svg, positions);
+      updateStats();
     }
 
     function assignCoordinates(node, depth, offsetX, width, positions) {
       if (!node) return;
-
-      const x = offsetX + width / 2;
+      const x = offsetX + width / 2 - 20;
       const y = depth * 80 + 20;
-
       node.x = x;
       node.y = y;
       positions.push({ node, x, y });
-
       assignCoordinates(node.left, depth + 1, offsetX, width / 2, positions);
       assignCoordinates(node.right, depth + 1, offsetX + width / 2, width / 2, positions);
     }
 
     function renderNodes(node, container, svg, positions) {
       if (!node) return;
-
-      if (node.left) {
-        drawLine(svg, node.x, node.y, node.left.x, node.left.y);
-      }
-      if (node.right) {
-        drawLine(svg, node.x, node.y, node.right.x, node.right.y);
-      }
+      if (node.left) drawLine(svg, node.x, node.y, node.left.x, node.left.y);
+      if (node.right) drawLine(svg, node.x, node.y, node.right.x, node.right.y);
 
       const div = document.createElement('div');
       div.className = 'node';
@@ -181,7 +337,7 @@
 
     function drawLine(svg, x1, y1, x2, y2) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', x1 + 20); // center of circle
+      line.setAttribute('x1', x1 + 20);
       line.setAttribute('y1', y1 + 20);
       line.setAttribute('x2', x2 + 20);
       line.setAttribute('y2', y2 + 20);
@@ -197,6 +353,13 @@
         }
       }, 100);
     }
+
+    function updateStats() {
+      document.getElementById('node-count').textContent = bst.count;
+      document.getElementById('tree-height').textContent = bst.getHeight();
+    }
+
+    updateTree(); // Initial
   </script>
 </body>
 </html>
