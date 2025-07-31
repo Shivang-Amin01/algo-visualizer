@@ -1,0 +1,187 @@
+<!-- avl.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AVL Tree Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #tree-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .node {
+      display: inline-block;
+      background-color: #673AB7;
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      line-height: 40px;
+      margin: 10px;
+      font-weight: bold;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+
+    .node.inserted {
+      background-color: #FF9800;
+      transform: scale(1.2);
+    }
+
+    .node.rotated {
+      background-color: #00BCD4;
+      transform: rotate(360deg);
+    }
+  </style>
+</head>
+<body>
+  <h1>AVL Tree Visualizer</h1>
+
+  <input type="number" id="valueInput" placeholder="Enter value">
+  <button onclick="insert()">Insert</button>
+
+  <div id="tree-container"></div>
+
+  <script>
+    class Node {
+      constructor(value) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+        this.height = 1;
+      }
+    }
+
+    class AVLTree {
+      constructor() {
+        this.root = null;
+      }
+
+      getHeight(node) {
+        return node ? node.height : 0;
+      }
+
+      getBalance(node) {
+        return node ? this.getHeight(node.left) - this.getHeight(node.right) : 0;
+      }
+
+      rotateRight(y) {
+        const x = y.left;
+        const T2 = x.right;
+
+        x.right = y;
+        y.left = T2;
+
+        y.height = 1 + Math.max(this.getHeight(y.left), this.getHeight(y.right));
+        x.height = 1 + Math.max(this.getHeight(x.left), this.getHeight(x.right));
+
+        return x;
+      }
+
+      rotateLeft(x) {
+        const y = x.right;
+        const T2 = y.left;
+
+        y.left = x;
+        x.right = T2;
+
+        x.height = 1 + Math.max(this.getHeight(x.left), this.getHeight(x.right));
+        y.height = 1 + Math.max(this.getHeight(y.left), this.getHeight(y.right));
+
+        return y;
+      }
+
+      insert(value) {
+        this.root = this._insert(this.root, value);
+        renderTree();
+        highlightNode(value, 'inserted');
+      }
+
+      _insert(node, value) {
+        if (!node) return new Node(value);
+
+        if (value < node.value) {
+          node.left = this._insert(node.left, value);
+        } else if (value > node.value) {
+          node.right = this._insert(node.right, value);
+        } else {
+          return node; // duplicate values not allowed
+        }
+
+        node.height = 1 + Math.max(this.getHeight(node.left), this.getHeight(node.right));
+        const balance = this.getBalance(node);
+
+        // Left Left
+        if (balance > 1 && value < node.left.value) {
+          animateRotation(node.value);
+          return this.rotateRight(node);
+        }
+
+        // Right Right
+        if (balance < -1 && value > node.right.value) {
+          animateRotation(node.value);
+          return this.rotateLeft(node);
+        }
+
+        // Left Right
+        if (balance > 1 && value > node.left.value) {
+          node.left = this.rotateLeft(node.left);
+          animateRotation(node.value);
+          return this.rotateRight(node);
+        }
+
+        // Right Left
+        if (balance < -1 && value < node.right.value) {
+          node.right = this.rotateRight(node.right);
+          animateRotation(node.value);
+          return this.rotateLeft(node);
+        }
+
+        return node;
+      }
+    }
+
+    const avl = new AVLTree();
+
+    function insert() {
+      const value = parseInt(document.getElementById('valueInput').value);
+      if (!isNaN(value)) avl.insert(value);
+    }
+
+    function renderTree() {
+      const container = document.getElementById('tree-container');
+      container.innerHTML = '';
+      renderNode(container, avl.root);
+    }
+
+    function renderNode(container, node) {
+      if (!node) return;
+      const div = document.createElement('div');
+      div.className = 'node';
+      div.textContent = node.value;
+      div.id = `node-${node.value}`;
+      container.appendChild(div);
+      renderNode(container, node.left);
+      renderNode(container, node.right);
+    }
+
+    function highlightNode(value, className) {
+      setTimeout(() => {
+        const node = document.getElementById(`node-${value}`);
+        if (node) {
+          node.classList.add(className);
+          setTimeout(() => node.classList.remove(className), 1000);
+        }
+      }, 100);
+    }
+
+    function animateRotation(value) {
+      highlightNode(value, 'rotated');
+    }
+  </script>
+</body>
+</html>
